@@ -698,4 +698,368 @@ try:
                     print(f"Ocurrió un error: {str(e)}")
 
 
+ ############################ NOTAS
+        def capturar_fecha():
+            while True:
+                fecha_ingresada= input('Fecha de la nota a capturar (dd/mm/YYYY): ')
+                try:
+                    fecha=datetime.datetime.strptime(fecha_ingresada, "%d/%m/%Y").date()
+                except ValueError:
+                    print('FORMATO DE FECHA INCORRECTO. INTENTE DE NUEVO.')
+                    continue
+
+                hoy_fecha = datetime.date.today()
+                if (fecha.month, fecha.day) >= (hoy_fecha.month, hoy_fecha.day):
+                    print('LA FECHA INGRESADA NO PUEDE SER MAYOR AL DÍA DE HOY. INTENTE DE NUEVO')
+                    continue
+                else:
+                    return fecha
+
+
+
+        def registrar_nota():
+            fecha_nota=capturar_fecha()
+
+            print(f'\nLista de clientes: ')
+            with sqlite3.connect ('Evidencia3_Prueba.db') as conn:
+                conn.execute("PRAGMA foreign_keys=1")
+                mi_cursor= conn.cursor()
+                mi_cursor.execute("SELECT clave_cliente, nombre_cliente FROM clientes")
+                listaclientes=mi_cursor.fetchall()
+                for clave, nombre in listaclientes:
+                    print (f"Clave cliente: {clave}\tNombre cliente: {nombre}")
+            while True:
+                try:
+                    clave_cliente=int(input('Ingrese la clave del cliente: '))
+                    if clave_cliente == 0:
+                        print('LA CLAVE DEL CLIENTE NO PUEDE SER 0. INTENTE DE NUEVO.')
+                        continue
+                    if not clave_cliente:
+                        print('LA CLAVE DEL CLIENTE NO PUEDE QUEDAR EN BLANCO. INGRESE UNA CLAVE VÁLIDA')
+                        continue
+                    elif clave_cliente not in [clave[0] for clave in listaclientes]:
+                        print('LA CLAVE SELECCIONADA NO ESTÁ REGISTRADA. INTENTE DE NUEVO')
+                        continue
+
+                except ValueError:
+                    print('INGRESE UN NÚMERO VÁLIDO. INTENTE DE NUEVO')
+                    continue
+                break
+
+            servicios_en_nota=[]
+            total_nota=0
+            while True:
+                print (f'\nLista de servicios: ')
+                with sqlite3.connect ('Evidencia3_Prueba.db') as conn:
+
+                    mi_cursor= conn.cursor()
+                    mi_cursor.execute("SELECT clave_servicio, nombre_servicio, costo_servicio FROM servicios WHERE estatus= '1'")
+                    listaservicios=mi_cursor.fetchall()
+
+                    for clave, nombre, costo in listaservicios:
+                        print (f"Clave servicio: {clave}\tNombre servicio: {nombre}\tCosto servicio: {costo}")
+
+                    try:
+                        clave_servicio=int(input('Ingrese la clave del servicio a agregar o escriba 0 si ya no desea agregar servicios: '))
+                        if clave_servicio == 0:
+                            print('HA DECIDIO NO AGREGAR MÁS SERVICIOS')
+                            break
+
+                        elif clave_servicio not in [servicio[0] for servicio in listaservicios]:
+                            print('LA CLAVE SELECCIONADA NO ESTÁ REGISTRADA. INTENTE DE NUEVO')
+                            continue
+
+                    except ValueError:
+                        print('INGRESE UN NÚMERO VÁLIDO. INTENTE DE NUEVO.')
+                        continue
+
+                    servicios_en_nota.append(clave_servicio)
+
+                    mi_cursor.execute(f"SELECT costo_servicio FROM servicios WHERE clave_servicio={clave_servicio}")
+                    listacostos=mi_cursor.fetchall()
+                    for costo in listacostos:
+                        total_nota= total_nota + int(costo[0])
+
+                    estatus='1'
+
+            with sqlite3.connect ('Evidencia3_Prueba.db') as conn:
+                mi_cursor= conn.cursor()
+
+                print(f'\nTotal servicios: {total_nota}')
+                valores=(fecha_nota, clave_cliente, total_nota, estatus)
+                mi_cursor.execute("INSERT INTO notas (fecha_nota, clave_cliente, total_nota, estatus) VALUES (?,?,?,?)", valores)
+                conn.commit()
+
+                folio_nota=mi_cursor.lastrowid
+
+                for clave_servicio in servicios_en_nota:
+                    valores=(folio_nota, clave_servicio)
+                    mi_cursor.execute("INSERT INTO detalle_notas (folio_nota, clave_servicio) VALUES (?,?)", valores)
+
+                print(f"\nNota registrada correctamente con el folio: {folio_nota}")
+
+        def cancelar_nota():
+            while True:
+                try:
+                    folio_cancelado = int(input('Ingrese el folio de la nota a cancelar: '))
+                    if not folio_cancelado:
+                        print('LA OPCIÓN ESTÁ EN BLANCO. INTENTE DE NUEVO.')
+                        continue
+                except ValueError:
+                    print('INGRESE UN NÚMERO VÁLIDO. INTENTE DE NUEVO')
+                    continue
+
+                try:
+                    with sqlite3.connect ('Evidencia3_Prueba.db') as conn:
+                        mi_cursor= conn.cursor()
+                        mi_cursor.execute(f"SELECT * FROM notas WHERE folio_nota={folio_cancelado} AND estatus='1' ")
+                        folios_cancelados=mi_cursor.fetchall()
+                        if not folios_cancelados:
+                            print('EL FOLIO DE LA NOTA A CANCELAR NO EXISTE. INTENTE DE NUEVO.')
+                            continue
+                        else:
+                            print(f"\nFolio nota\tFecha nota\tClave cliente\tTotal nota\tEstatus")
+                            for folio in folios_cancelados:
+                                print(f"{folio[0]}\t\t{folio[1]}\t\t{folio[2]}\t{folio[3]}\t{folio[4]}")
+                            try:
+                                opcion_cancelar=input('Desea cancelar la nota? SI/NO: ').upper().strip()
+                                if not opcion_cancelar:
+                                    print('LA OPCIÓN ESTÁ EN BLANCO. INTENTE DE NUEVO')
+                                    continue
+                                if opcion_cancelar=="SI":
+                                    mi_cursor.execute(f"UPDATE notas SET estatus='0' WHERE folio_nota={folio_cancelado}")
+                                    conn.commit()
+                                    print('SE CANCELÓ LA NOTA EXITOSAMENTE')
+                                    break
+                                elif opcion_cancelar == "NO":
+                                    print('NO SE CANCELÓ LA NOTA SELECCIONADA')
+                                    break
+                                else:
+                                    print('Opción inválida. Escriba "SI" o "NO". Inténtelo de nuevo.')
+                                    continue
+                            except ValueError:
+                                print('Opción inválida. Escriba "SI" o "NO". Inténtelo de nuevo.')
+
+                except Exception as e:
+                    print('Ocurrió un error: {e} ')
+                    continue
+                except sqlite3.Error as e:
+                    print(f'Ocurrió un error de base de datos: {e}')
+                    break
+
+        def recuperar_nota():
+            while True:
+                try:
+                    with sqlite3.connect ('Evidencia3_Prueba.db') as conn:
+                        mi_cursor= conn.cursor()
+                        mi_cursor.execute(f"SELECT folio_nota FROM notas WHERE estatus='0' ")
+                        folios_cancelados=mi_cursor.fetchall()
+                        if not folios_cancelados:
+                            print('NO HAY NOTAS CANCELADAS PARA MOSTRAR')
+                            break
+                        else:
+                            print(f"\nFolios de las notas actualmente canceladas:")
+                            for folio in folios_cancelados:
+                                print(f"\t{folio[0]}")
+
+                            try:
+                                folio_recuperar=int(input('Ingrese el folio de la nota a recuperar / Si no se va a recuperar una nota escriba 0: '))
+                                if folio_recuperar == 0:
+                                    print('EL FOLIO DE LA NOTA NO PUEDE SER 0. INGRESE UN FOLIO VÁLIDO')
+                                    continue
+                                if not folio_recuperar:
+                                    print('EL FOLIO NO SE PUEDE QUEDAR EN BLANCO. INGRESE UN FOLIO VÁLIDO')
+                                    continue
+                                if folio_recuperar not in [folio[0] for folio in folios_cancelados]:
+                                    print('EL FOLIO INGRESADO NO EXISTE EN LAS NOTAS CANCELADAS. INGRESE UN FOLIO VÁLIDO')
+                                    continue
+                            except ValueError:
+                                print('Ingrese un número válido. Inténtelo de nuevo.')
+                            else:
+                                opcion_recuperar=input('Desea recuperar la nota? SI/NO: ').upper()
+                                if not opcion_recuperar:
+                                    print('LA OPCIÓN ESTÁ EN BLANCO. INTENTE DE NUEVO')
+                                    continue
+                                if opcion_recuperar=='SI':
+                                    for folio in folios_cancelados:
+                                        if folio_recuperar==folio[0]:
+                                            mi_cursor.execute(f"UPDATE notas SET estatus='1' WHERE folio_nota={folio_recuperar}")
+                                            conn.commit()
+                                            print('SE RECUPERÓ LA NOTA')
+                                            break
+                                elif opcion_recuperar=='NO':
+                                    print('NO SE RECUPERÓ LA NOTA SELECCIONADA')
+                                    break
+                                else:
+                                    print('Opción inválida. Escriba "SI" o "NO". Inténtelo de nuevo.')
+                                    continue
+                except Exception as e:
+                    print('Ocurrió un error: {e} ')
+                    continue
+
+        def consulta_por_periodo_notas():
+            while True:
+                try:
+                    with sqlite3.connect ('Evidencia3_Prueba.db') as conn:
+                        mi_cursor= conn.cursor()
+
+                        fecha_inicial = input("Ingrese la fecha inicial (MM-DD-AAAA) o presione Enter para usar la fecha 01-01-2000: ")
+                        if fecha_inicial.strip() == '':
+                            fecha_inicial = datetime.date(2000, 1, 1)
+                        else:
+                            fecha_inicial = datetime.datetime.strptime(fecha_inicial, "%m-%d-%Y").date()
+
+                        fecha_final = input("Ingrese la fecha final (MM-DD-AAAA) o presione Enter para usar la fecha actual: ")
+                        if fecha_final.strip() == '':
+                            fecha_final = datetime.date.today()
+                        else:
+                            fecha_final = datetime.datetime.strptime(fecha_final, "%m-%d-%Y").date()
+
+                        if fecha_final < fecha_inicial:
+                            print(f"\nLA FECHA FINAL DEBE SER IGUAL O POSTERIOR A LA FECHA INICIAL, INTENTE DE NUEVO.")
+                            continue
+
+                        mi_cursor.execute(f"SELECT * FROM notas WHERE fecha_nota BETWEEN '{fecha_inicial}' AND '{fecha_final}' ")
+                        notas_periodo=mi_cursor.fetchall()
+
+                        if not notas_periodo:
+                                print('No hay notas creadas en ese periodo.')
+                                break
+                        else:
+                            print(f"\nNotas encontradas en el período: ")
+                            print(f"\nFolio nota\tFecha nota\tClave cliente\tTotal nota\tEstatus")
+                            for nota in notas_periodo:
+                                print(f"{nota[0]}\t\t{nota[1]}\t\t{nota[2]}\t{nota[3]}\t\t{nota[4]}")
+
+                            mi_cursor.execute(f"SELECT total_nota FROM notas WHERE fecha_nota BETWEEN '{fecha_inicial}' AND '{fecha_final}' ")
+                            notas_periodo_monto_promedio=mi_cursor.fetchall()
+
+                            monto_notas=0
+                            for costo in notas_periodo_monto_promedio:
+                                monto_notas= monto_notas + int(costo[0])
+
+                            promedio_notas=monto_notas / len(notas_periodo_monto_promedio)
+                            print(f"\nEl monto promedio de las notas en el período es de: ${promedio_notas:.2f}")
+
+                            print(f"\nOpciones de exportación:")
+                            print(f"1. Excel")
+                            print(f"2. CSV")
+                            print(f"3. Volver a menú de reportes")
+
+
+
+                            opcion_exportar=int(input(f'\nOpción a elegir: '))
+                            match opcion_exportar:
+                                case 1:
+                                    exportar_a_excel_notas(fecha_inicial, fecha_final, promedio_notas)
+                                    break
+
+                                case 2:
+                                    fecha_inicial_db = fecha_inicial.strftime("%m-%d-%Y")
+                                    fecha_final_db = fecha_final.strftime("%m-%d-%Y")
+
+                                    nombre_archivo_csv=f"ReportePorPeriodo_{fecha_inicial_db}_{fecha_final_db}.csv"
+                                    with open(nombre_archivo_csv, 'w', newline='') as file:
+                                        writer = csv.writer(file)
+                                        writer.writerow(["Folio nota", "Fecha nota", "Clave Cliente", "Total nota", "Estatus"])
+
+                                        for nota in notas_periodo:
+                                            writer.writerow([nota[0], nota[1], nota[2], nota[3], nota[4]])
+
+                                        writer.writerow(["Promedio de las notas en el periodo: ", promedio_notas])
+
+                                        print(f"Se ha exportado la información a '{nombre_archivo_csv}'.")
+                                        break
+
+                                case 3:
+                                    print('Volviendo al menú de reportes.')
+                                    break
+                                case _:
+                                    print("Opción no válida. Por favor, ingrese un número del 1 al 3.")
+
+                except ValueError:
+                    print("Formato de fecha incorrecto.")
+                    continue
+
+                except Exception as e:
+                    print(f"Ocurrió un error: {str(e)}")
+
+
+
+        def exportar_a_excel_notas(fecha_inicial, fecha_final, promedio_notas):
+            workbook = openpyxl.Workbook()
+            sheet = workbook.active
+            sheet.title = "Notas_Periodo"
+
+
+            sheet['A1'] = "Folio nota"
+            sheet['B1'] = "Fecha nota"
+            sheet['C1'] = "Clave Cliente"
+            sheet['D1'] = "Total nota"
+            sheet['E1'] = "Estatus"
+            sheet['F1'] = "Promedio notas en el período"
+
+            row = 2
+            with sqlite3.connect ('Evidencia3_Prueba.db') as conn:
+                mi_cursor= conn.cursor()
+                mi_cursor.execute(f"SELECT * FROM notas WHERE fecha_nota BETWEEN '{fecha_inicial}' AND '{fecha_final}' ")
+                notas_periodo_db=mi_cursor.fetchall()
+                print (notas_periodo_db)
+                for nota in notas_periodo_db:
+                    sheet[f'A{row}'] = nota[0]
+                    sheet[f'B{row}'] = nota[1]
+                    sheet[f'C{row}'] = nota[2]
+                    sheet[f'D{row}'] = nota[3]
+                    sheet[f'E{row}'] = nota[4]
+                    row += 1
+                sheet[f'F{row}'] = promedio_notas
+
+            fecha_inicial_db = fecha_inicial.strftime("%m-%d-%Y")
+            fecha_final_db = fecha_final.strftime("%m-%d-%Y")
+
+            nombre_archivo_excel = f"ReportePorPeriodo_{fecha_inicial_db}_{fecha_final_db}.xlsx"
+            workbook.save(nombre_archivo_excel)
+            print(f"Se ha exportado la información a '{nombre_archivo_excel}'.")
+
+        def consultar_por_folio_notas():
+            with sqlite3.connect ('Evidencia3_Prueba.db') as conn:
+                mi_cursor= conn.cursor()
+                mi_cursor.execute(f"SELECT notas.folio_nota, notas.fecha_nota, clientes.nombre_cliente FROM notas INNER JOIN clientes ON notas.clave_cliente=clientes.clave_cliente ORDER BY notas.folio_nota ")
+                notas_folio=mi_cursor.fetchall()
+                print(f"\nCONSULTA POR FOLIO: ")
+                print(f"Folio nota\tFecha nota\tNombre cliente")
+                for nota in notas_folio:
+                    print(f"{nota[0]}\t\t{nota[1]}\t{nota[2]}")
+                while True:
+                    try:
+                        folio_consulta_notas=int(input(f'\nIngrese el folio de la nota a consultar / Si no se va a consultar una nota escriba 0: '))
+                        if folio_consulta_notas == 0:
+                            print('Usted ha decidido no consultar ninguna nota')
+                            break
+                        if not folio_consulta_notas:
+                            print('El folio no se puede quedar en blanco. Por favor, ingrese un folio válido.')
+                            continue
+
+                        with sqlite3.connect ('Evidencia3_Prueba.db') as conn:
+                            mi_cursor= conn.cursor()
+                            mi_cursor.execute(f"SELECT notas.folio_nota, notas.fecha_nota, clientes.clave_cliente, clientes.nombre_cliente, clientes.RFC, clientes.correo_cliente, detalle_notas.id_detalle, servicios.nombre_servicio, servicios.costo_servicio, notas.estatus \
+                                                FROM notas \
+                                                INNER JOIN clientes ON notas.clave_cliente = clientes.clave_cliente\
+                                                INNER JOIN detalle_notas ON notas.folio_nota = detalle_notas.folio_nota\
+                                                INNER JOIN servicios ON detalle_notas.clave_servicio = servicios.clave_servicio WHERE notas.folio_nota={folio_consulta_notas} AND notas.estatus='1' ")
+
+                            notas_folio=mi_cursor.fetchall()
+                            if folio_consulta_notas not in [nota[0] for nota in notas_folio]:
+                                print('La nota no se encuentra en el sistema. Por favor, ingrese un folio válido.')
+                                continue
+                            else:
+                                print("\n{:<12}\t{:<14}\t{:<13}\t{:<16}\t{:<11}\t{:<19}\t{:<15}\t\t{:<20}\t{:<15}\t{:<12}".format("Folio nota", "Fecha nota", "Clave cliente", "Nombre cliente", "RFC cliente", "Correo cliente", "ID detalle nota", "Servicio realizado", "Costo servicio", "Estatus nota"))
+                                for nota in notas_folio:
+                                    print("{:<12}\t{:<14}\t{:<13}\t{:<16}\t{:<11}\t{:<19}\t{:<15}\t\t{:<20}\t${:.2f}\t\t{:<12}".format(nota[0], nota[1], nota[2], nota[3], nota[4], nota[5], nota[6], nota[7], nota[8], nota[9]))
+                                break
+
+                    except ValueError:
+                        print('Ingrese un numero valido. Intenta de nuevo.')
+
+
  
