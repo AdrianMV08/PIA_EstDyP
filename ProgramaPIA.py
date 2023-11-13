@@ -1221,3 +1221,285 @@ except Exception:
     print(f"Se produjo el siguiente error: {sys.exc_info()[0]}")
 finally:
     conn.close()
+try:
+    while True:
+        print("\nMenú Principal:")
+        print("1. Notas")
+        print("2. Clientes")
+        print("3. Servicios")
+        print("4. Estadisticas")
+        print("5. Salir")
+
+        opcion_menu = input("Seleccione una opción: ").strip()
+
+        if opcion_menu.isdigit():
+            opcion_menu = int(opcion_menu)
+
+            if 1 <= opcion_menu <= 5:
+                if opcion_menu == 1:
+                    while True:
+                        print("\nSubMenu Notas:")
+                        print("1. Registrar una nota")
+                        print("2. Cancelar una nota")
+                        print("3. Recuperar una nota")
+                        print("4. Consultas y reportes de notas")
+                        print("5. Volver al menú principal")
+
+                        opcion_submenu_notas = input("Seleccione una opción: ").strip()
+
+                        if opcion_submenu_notas.isdigit():
+                            opcion_submenu_notas = int(opcion_submenu_notas)
+
+                            if 1 <= opcion_submenu_notas <= 5:
+                                if opcion_submenu_notas == 1:
+                                    registrar_nota()
+                                elif opcion_submenu_notas == 2:
+                                    cancelar_nota()
+                                elif opcion_submenu_notas == 3:
+                                    recuperar_nota()
+                                elif opcion_submenu_notas == 4:
+                                    while True:
+                                        print("\n Consultas y reportes de notas:")
+                                        print("1. Consulta por período")
+                                        print("2. Consulta por folio")
+                                        print("3. Volver al menú de notas")
+
+                                        opcion_submenu_consultas_notas = input("Seleccione una opción: ").strip()
+
+                                        if opcion_submenu_consultas_notas.isdigit():
+                                            opcion_submenu_consultas_notas = int(opcion_submenu_consultas_notas)
+
+                                            if 1 <= opcion_submenu_consultas_notas <= 3:
+                                                if opcion_submenu_consultas_notas == 1:
+                                                    consulta_por_periodo_notas()
+                                                elif opcion_submenu_consultas_notas == 2:
+                                                    consultar_por_folio_notas()
+                                                elif opcion_submenu_consultas_notas == 3:
+                                                    break
+                                                else:
+                                                    print("Opción no válida.")
+                                            else:
+                                                print("Opción no válida.")
+                                        else:
+                                            print("Debe ingresar un número.")
+                                elif opcion_submenu_notas == 5:
+                                    break
+                                else:
+                                    print("Opción no válida.")
+                            else:
+                                print("Opción no válida.")
+                        else:
+                            print("Debe ingresar un número.")
+                elif opcion_menu == 2:
+                    while True:
+                        print("\nSubMenu Clientes :")
+                        print("1. Agregar un cliente")
+                        print("2. Suspender un cliente")
+                        print("3. Recuperar un cliente")
+                        print("4. Consultas y reportes de clientes")
+                        print("5. Volver al menú principal")
+
+                        opcion_submenu_clientes = input("Seleccione una opción: ").strip()
+
+                        if opcion_submenu_clientes.isdigit():
+                            opcion_submenu_clientes = int(opcion_submenu_clientes)
+
+                            if 1 <= opcion_submenu_clientes <= 5:
+                                if opcion_submenu_clientes == 1:
+                                    agregar_cliente()
+                                elif opcion_submenu_clientes == 2:
+                                    suspender_cliente()
+                                elif opcion_submenu_clientes == 3:
+                                    recuperar_cliente()
+                                elif opcion_submenu_clientes == 4:
+                                    while True:
+                                        print(f"\nSubMenú Consultas y reportes")
+                                        print("1. Listado de clientes registrados")
+                                        print("2. Búsqueda por Clave")
+                                        print("3. Búsqueda por Nombre")
+                                        print("4. Volver al menú de clientes")
+
+                                        opcion_submenu_consulta_clientes = input("Seleccione una opción: ").strip()
+
+                                        if opcion_submenu_consulta_clientes.isdigit():
+                                            opcion_submenu_consulta_clientes = int(opcion_submenu_consulta_clientes)
+
+                                            if 1 <= opcion_submenu_consulta_clientes <= 4:
+                                                if opcion_submenu_consulta_clientes == 1:
+                                                    while True:
+                                                        print(f"\nSubMenú Listado de clientes registrados")
+                                                        print("1. Ordenado por clave")
+                                                        print("2. Ordenado por nombre")
+                                                        print("3. Volver al menú anterior")
+
+                                                        opcion_submenu_orden_clientes = input("Seleccione una opción: ").strip()
+
+                                                        if opcion_submenu_orden_clientes.isdigit():
+                                                            opcion_submenu_orden_clientes = int(opcion_submenu_orden_clientes)
+
+                                                            if 1 <= opcion_submenu_orden_clientes <= 3:
+                                                                if opcion_submenu_orden_clientes == 1:
+                                                                    ordenar_cliente_por_clave()
+                                                                elif opcion_submenu_orden_clientes == 2:
+                                                                    ordenar_cliente_por_nombre()
+                                                                elif opcion_submenu_orden_clientes == 3:
+                                                                    break
+                                                                else:
+                                                                    print("Opción no válida.")
+                                                            else:
+                                                                print("Opción no válida.")
+                                                        else:
+                                                            print("Debe ingresar un número.")
+                                                elif opcion_submenu_consulta_clientes == 2:
+                                                    clave_input = input("Ingrese la clave del cliente: ").strip()
+                                                    if clave_input and clave_input.isdigit():
+                                                        clave = int(clave_input)
+                                                        buscar_cliente_por_clave(clave)
+                                                    else:
+                                                        print("La clave ingresada no es válida.")
+                                                elif opcion_submenu_consulta_clientes == 3:
+                                                    nombre = input("Ingrese el nombre del cliente: ").strip()
+                                                    if nombre:
+                                                        buscar_cliente_por_nombre(nombre)
+                                                    else:
+                                                        print("El nombre ingresado no es válido.")
+                                                elif opcion_submenu_consulta_clientes == 4:
+                                                    break
+                                                else:
+                                                    print("Opción no válida.")
+                                            else:
+                                                print("Opción no válida.")
+                                        else:
+                                            print("Debe ingresar un número.")
+                                elif opcion_submenu_clientes == 5:
+                                    break
+                                else:
+                                    print("Opción no válida.")
+                            else:
+                                print("Opción no válida.")
+                        else:
+                            print("Debe ingresar un número.")
+                elif opcion_menu == 3:
+                    while True:
+                        print("\nSubMenu Servicios :")
+                        print("1. Agregar un servicio")
+                        print("2. Suspender un servicio")
+                        print("3. Recuperar un servicio")
+                        print("4. Consultas y reportes de servicios")
+                        print("5. Volver al menú principal")
+
+                        opcion_submenu_servicios = input("Seleccione una opción: ").strip()
+
+                        if opcion_submenu_servicios.isdigit():
+                            opcion_submenu_servicios = int(opcion_submenu_servicios)
+
+                            if 1 <= opcion_submenu_servicios <= 5:
+                                if opcion_submenu_servicios == 1:
+                                    agregar_servicio()
+                                elif opcion_submenu_servicios == 2:
+                                    servicios_suspender()
+                                elif opcion_submenu_servicios == 3:
+                                    recuperar_servicio()
+                                elif opcion_submenu_servicios == 4:
+                                    while True:
+                                        print("\nConsultas y reportes de servicios: ")
+                                        print("1. Búsqueda por clave de servicio")
+                                        print("2. Búsqueda por nombre de servicio")
+                                        print("3. Listado de clientes registrados")
+                                        print("4. Volver al menú de servicios")
+
+                                        opcion_submenu_consultas_servicios = input("Seleccione una opción: ").strip()
+
+                                        if opcion_submenu_consultas_servicios.isdigit():
+                                            opcion_submenu_consultas_servicios = int(opcion_submenu_consultas_servicios)
+
+                                            if 1 <= opcion_submenu_consultas_servicios <= 4:
+                                                if opcion_submenu_consultas_servicios == 1:
+                                                    buscar_servicio_por_clave()
+                                                elif opcion_submenu_consultas_servicios == 2:
+                                                    buscar_servicio_por_nombre()
+                                                elif opcion_submenu_consultas_servicios == 3:
+                                                    while True:
+                                                        print("\nListado de servicios:")
+                                                        print("1. Ordenado por clave de servicio")
+                                                        print("2. Ordenado por nombre de servicio")
+                                                        print("3. Volver al menú de servicios")
+
+                                                        opcion_submenu_orden_servicios = input("Seleccione una opción: ").strip()
+
+                                                        if opcion_submenu_orden_servicios.isdigit():
+                                                            opcion_submenu_orden_servicios = int(opcion_submenu_orden_servicios)
+
+                                                            if 1 <= opcion_submenu_orden_servicios <= 3:
+                                                                if opcion_submenu_orden_servicios == 1:
+                                                                    ordenar_servicio_por_clave()
+                                                                elif opcion_submenu_orden_servicios == 2:
+                                                                    ordenar_servicio_por_nombre()
+                                                                elif opcion_submenu_orden_servicios == 3:
+                                                                    break
+                                                                else:
+                                                                    print("Opción no válida.")
+                                                            else:
+                                                                print("Opción no válida.")
+                                                        else:
+                                                            print("Debe ingresar un número.")
+                                                elif opcion_submenu_consultas_servicios == 4:
+                                                    break
+                                                else:
+                                                    print("Opción no válida.")
+                                            else:
+                                                print("Opción no válida.")
+                                        else:
+                                            print("Debe ingresar un número.")
+                                elif opcion_submenu_servicios == 5:
+                                    break
+                                else:
+                                    print("Opción no válida.")
+                            else:
+                                print("Opción no válida.")
+                        else:
+                            print("Debe ingresar un número.")
+                elif opcion_menu == 4:
+                    while True:
+                        print("\nSubmenú Estadísticas:")
+                        print("1. Servicios más prestados")
+                        print("2. Clientes con más notas")
+                        print("3. Promedio de montos de notas por período")
+                        print("4. Volver al menú principal")
+
+                        opcion_submenu_estadisticas = input("Seleccione una opción: ").strip()
+
+                        if opcion_submenu_estadisticas.isdigit():
+                            opcion_submenu_estadisticas = int(opcion_submenu_estadisticas)
+
+                            if 1 <= opcion_submenu_estadisticas <= 4:
+                                if opcion_submenu_estadisticas == 1:
+                                    servicio_mas_usado()
+                                elif opcion_submenu_estadisticas == 2:
+                                    clientes_mas_notas()
+                                elif opcion_submenu_estadisticas == 3:
+                                    calcular_promedio_notas_por_periodo()
+                                elif opcion_submenu_estadisticas == 4:
+                                    break
+                                else:
+                                    print("Opción no válida.")
+                            else:
+                                print("Opción no válida.")
+                        else:
+                            print("Debe ingresar un número.")
+                elif opcion_menu == 5:
+                    confirmacion_salida = input("¿Está seguro que desea salir? (Sí/No): ").strip().lower()
+                    if confirmacion_salida in ('si', 's'):
+                        break
+                    elif confirmacion_salida in ('no', 'n'):
+                        continue
+                    else:
+                        print("Opción no válida. Volviendo al menú principal.")
+            else:
+                print("Opción no válida.")
+        elif not opcion_menu:
+            print("No se puede omitir la selección. Debe ingresar una opción.")
+        else:
+            print("Debe ingresar un número.")
+except Exception:
+    print(f"Se produjo el siguiente error: {sys.exc_info()[0]}")
