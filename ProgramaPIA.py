@@ -1061,5 +1061,163 @@ try:
                     except ValueError:
                         print('Ingrese un numero valido. Intenta de nuevo.')
 
+        ################ Estadisticas
+        def clientes_mas_notas():
+          try:
+            with sqlite3.connect('Evidencia3_Prueba.db') as conn:
+                 mi_cursor = conn.cursor()
 
- 
+            while True:
+                try:
+                    cantidad_personas = int(input("Ingrese la cantidad de personas a mostrar con más notas: "))
+                    if cantidad_personas <= 0:
+                        print("Ingrese un número mayor a 0.")
+                    else:
+                        break
+                except ValueError:
+                    print("Ingrese un número válido.")
+
+            while True:
+                try:
+                    fecha_inicial = input("Ingrese la fecha inicial del periodo (mm-dd-aaaa): ")
+                    fecha_inicial = datetime.datetime.strptime(fecha_inicial, "%m-%d-%Y").date()
+                    fecha_final = input("Ingrese la fecha final del periodo (mm-dd-aaaa): ")
+                    fecha_final = datetime.datetime.strptime(fecha_final, "%m-%d-%Y").date()
+
+                    if fecha_final < fecha_inicial:
+                        print("La fecha final debe ser mayor o igual a la fecha inicial.")
+                    else:
+                        break
+                except ValueError:
+                    print("Formato de fecha incorrecto. Intente de nuevo.")
+
+            mi_cursor.execute("""
+                SELECT s.nombre_servicio, COUNT(dn.clave_servicio) as cantidad
+                FROM detalle_notas dn
+                JOIN notas n ON dn.folio_nota = n.folio_nota
+                JOIN servicios s ON dn.clave_servicio = s.clave_servicio
+                WHERE n.fecha_nota BETWEEN ? AND ?
+                GROUP BY s.nombre_servicio
+                ORDER BY cantidad DESC
+                LIMIT ?
+            """, (fecha_inicial, fecha_final, cantidad_personas))
+
+            servicios_mas_solicitados = mi_cursor.fetchall()
+
+            if not servicios_mas_solicitados:
+              print("\nNo se encuentran datos disponibles por el momento.")
+              return
+
+            print("\nReporte de Servicios Más Solicitados:")
+            print("Nombre Servicio\t\tCantidad de Notas")
+            for servicio, cantidad in servicios_mas_solicitados:
+                print(f"{servicio}\t\t\t{cantidad}")
+
+                print("\nOpciones de exportación:")
+                print("1. Excel")
+                print("2. CSV")
+                print("3. Volver a menú de reportes")
+
+                opcion_exportar = int(input(f"\nOpción a elegir: "))
+                match opcion_exportar:
+                  case 1:
+                    workbook = openpyxl.Workbook()
+                    sheet = workbook.active
+                    sheet.title = "Cliente_con_mas_notas"
+
+                    sheet['A1'] = "Nombre Servicio"
+                    sheet['B1'] = "Cantidad de Notas"
+                    row = 2
+
+                    for servicio, cantidad in servicios_mas_solicitados:
+                        sheet[f'A{row}'] = servicio
+                        sheet[f'B{row}'] = cantidad
+                        row += 1
+
+                    fecha_inicial_db = fecha_inicial.strftime("%m-%d-%Y")
+                    fecha_final_db = fecha_final.strftime("%m-%d-%Y")
+
+                    nombre_archivo_excel = f"ReporteClienteConMasNotas_{fecha_inicial_db}_{fecha_final_db}.xlsx"
+                    workbook.save(nombre_archivo_excel)
+                    print(f"Se ha exportado la información a '{nombre_archivo_excel}'.")
+                    break
+
+                  case 2:
+                    fecha_inicial_db = fecha_inicial.strftime("%m-%d-%Y")
+                    fecha_final_db = fecha_final.strftime("%m-%d-%Y")
+
+                    nombre_archivo_csv = f"ReporteClienteConMasNotas_{fecha_inicial.strftime('%m_%d_%Y')}_{fecha_final.strftime('%m_%d_%Y')}.csv"
+                    with open(nombre_archivo_csv, 'w', newline='') as file:
+                         writer = csv.writer(file)
+                         writer.writerow(["Nombre Servicio", "Cantidad de Notas"])
+                         for servicio, cantidad in servicios_mas_solicitados:
+                             writer.writerow([servicio, cantidad])
+                    print(f"Se ha exportado la información a '{nombre_archivo_csv}'.")
+                    break
+
+                  case 3:
+                     print("Volviendo al menú de reportes.")
+                     continue
+                  case _:
+                     print("Opción no válida. Por favor, ingrese un número del 1 al 3.")
+
+          except ValueError:
+               print("Formato de fecha incorrecto.")
+
+          except Exception as e:
+              print(f"Ocurrió un error: {str(e)}")
+
+
+        def calcular_promedio_notas_por_periodo():
+          try:
+           fecha_inicial_str = input("Ingrese la fecha inicial del período (DD-MM-AAAA): ")
+           fecha_inicial = datetime.datetime.strptime(fecha_inicial_str, "%d-%m-%Y").date()
+
+           fecha_final_str = input("Ingrese la fecha final del período (DD-MM-AAAA): ")
+           fecha_final = datetime.datetime.strptime(fecha_final_str, "%d-%m-%Y").date()
+           if fecha_final < fecha_inicial:
+            print("La fecha final debe ser igual o posterior a la fecha inicial.")
+            return
+
+           with sqlite3.connect('Evidencia3_Prueba.db') as conn:
+            mi_cursor = conn.cursor()
+            mi_cursor.execute(f"SELECT SUM(total_nota) FROM notas WHERE fecha_nota BETWEEN ? AND ?", (fecha_inicial, fecha_final))
+            total_montos = mi_cursor.fetchone()[0]
+            mi_cursor.execute(f"SELECT COUNT(folio_nota) FROM notas WHERE fecha_nota BETWEEN ? AND ?", (fecha_inicial, fecha_final))
+            total_notas = mi_cursor.fetchone()[0]
+            if total_notas == 0:
+                print("No hay notas en el período especificado.")
+            else:
+                promedio = total_montos / total_notas
+                print(f"\nEl monto promedio de las notas para el período {fecha_inicial} - {fecha_final} es: ${promedio:.2f}")
+          except ValueError:
+            print('Ingrese fechas en el formato correcto (YYYY-MM-DD).')
+
+        def servicio_mas_usado():
+            with sqlite3.connect('Evidencia3_Prueba.db') as conn:
+                mi_cursor = conn.cursor()
+                mi_cursor.execute("SELECT clave_servicio, COUNT(clave_servicio) as veces_usado FROM detalle_notas GROUP BY clave_servicio ORDER BY veces_usado DESC LIMIT 1")
+
+                servicio_mas_usado = mi_cursor.fetchone()
+
+                if servicio_mas_usado:
+                    clave_servicio_mas_usado = servicio_mas_usado[0]
+                    veces_usado = servicio_mas_usado[1]
+
+                    mi_cursor.execute("SELECT * FROM servicios WHERE clave_servicio = ?", (clave_servicio_mas_usado,))
+                    servicio = mi_cursor.fetchone()
+
+                    if servicio:
+                        print(f"El servicio más usado es: {servicio[1]}")
+                        print(f"Veces usado: {veces_usado}")
+                    else:
+                        print("No se encontró información del servicio más usado.")
+                else:
+                    print("No hay servicios registrados en las notas.")     
+
+ except Error as e:
+    print (e)
+except Exception:
+    print(f"Se produjo el siguiente error: {sys.exc_info()[0]}")
+finally:
+    conn.close()
